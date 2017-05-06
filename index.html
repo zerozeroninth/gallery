@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Scattered Polaroids Gallery</title>
+	<style>
+		body,div,h2,figure,figcaption,p{
+			margin: 0;
+			padding: 0;
+		}
+		body{
+			background-color: #fff;
+			color: #a7a0a2;
+			line-height: 1.25;
+			font-family: 'Avenir next', 'lantinghei SC' ;
+		}
+		@font-face{
+			font-family: 'icon';
+			src:url(font/icons.woff) format('woff');
+			font-weight: normal;
+			font-size: normal;
+		}
+		.photoStack{
+			height: 580px;
+			width: 100%;
+			position: relative;
+			background-color: #ddd;
+			margin-top: 300px auto;
+			overflow: hidden;
+			perspective: 800px
+		}
+		.photoStack > div , .photoStack figure{
+			transform-style: preserve-3d;
+		}
+		.photo{
+			width: 320px;
+			height: 360px;
+			padding: 40px;
+			box-sizing: border-box;
+			text-align: center;
+			background-color: #fff;
+			position: absolute;
+			backface-visibility: hidden;
+			transition: transform .6s;
+		}
+		.photo:after{
+			content: '';
+			display: block;
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			left: 0;
+			top: 0;
+			background-color: rgba(0,0,0,0.05);
+			opacity: 1;
+		}
+		.photo_current{
+			transform-origin: 0% 50% ;
+			z-index: 999;
+		}
+		.photo_current:after{
+			opacity: 0;
+			visibility: hidden;
+			transition: opacity .6s;
+			transition-property: opacity, visibility;
+		}
+		.photo img{
+			width: 240px;
+			height: 240px;
+			outline: none;
+			display: block;
+		}
+		.photoStack-title{
+			margin-top: 20px;
+			font-size: 16px;
+
+		}
+		
+		
+		.photoStack nav{
+			position: absolute;
+			width: 100%;
+			bottom: 50px;
+			z-index: 90;
+			text-align: center;
+		}
+		.photoStack nav span{
+			display: inline-block;
+			width: 30px;
+			height: 30px;
+			line-height: 30px;
+			margin-right: 15px;
+			text-align: center;
+			background-color: #aaa;
+			border-radius: 50%;
+			cursor: pointer;
+			transform: scale(0.48);
+			transition: transform .6s;
+		}
+		.photoStack nav span:after{
+			content: '\e600';
+			font-family: 'icon';
+			color: #fff;
+			font-size: 80%; 
+			text-align: center;
+			opacity: 0;
+		}
+		.photoStack nav span.current{
+			transform: scale(1);
+		}
+		
+		.photoStack nav span.flippable{
+			transform: rotateY(0deg);
+		}
+		.photoStack nav span.flippable:after{
+			transition: opacity .6s;
+			opacity: 1;
+		}
+		.photoStack nav span.flipped{
+			background-color: #888;
+			transition: transform .6s;
+			transform:  rotateY(-180deg);
+		}
+
+		.photoStack-back{
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
+			padding: 50px 40px;
+			box-sizing: border-box;
+			background-color: #fff;
+			backface-visibility: hidden;
+			transform: rotateY(180deg);
+			transform-style: preserve-3d;
+			transition: all 1s;
+			text-align: center;
+			font-size: 22px;
+			font-family: 'Give You Glory', cursive;
+			z-index: 1;
+		}
+		
+	</style>
+	<script src="img/data.js"></script>
+	<script>
+
+		function mainHandle(){
+			var oPhotoStack = document.querySelector('.photoStack');
+			insertContent();
+			// document.querySelector('#photo_0').classList.add('photo_current');
+			// var oCurPhoto = document.querySelector('.photo_current');
+			// oCurPhoto.clicked = false;
+			
+			var aPhoto = document.querySelectorAll('.photo');
+			var aBtn = document.querySelectorAll('.photoStack nav span');
+			var basicPos = '';
+			function init (){
+				shuffllePhoto();
+				var ram  = parseInt(rangeRandom(0,aPhoto.length), 10)
+				centerPhoto( ram );
+				btnActive(ram);
+				basicPos = aPhoto[ram].style.cssText.slice(0, -1)
+			}
+			init();
+
+
+			// document.querySelector('.btn3').addEventListener('click', function (){
+			// 		if (! oCurPhoto.clicked) {
+			// 			oCurPhoto.clicked = true;
+			// 			oCurPhoto.style.cssText = "transform: translate(320px) rotateY(180deg) ";
+			// 		}
+			// 		else{
+			// 			oCurPhoto.clicked = false;
+			// 			oCurPhoto.style.cssText = "transform: rotateY(0deg)";
+			// 		}
+					
+			// 	});	
+			
+			
+			aBtn.forEach(function (e,index){
+
+				(function (i){
+					
+					e.addEventListener('click', function (){
+
+						if (e.classList.contains('flippable')) {
+							flip(i);
+						}else {
+							shuffllePhoto();
+							btnActive(i);
+							centerPhoto(i);
+						}
+						
+					}, false);
+				})(index);
+				
+			});
+
+			function flip (i){
+				var pic = aPhoto[i];
+				var btn = aBtn[i];
+				if(! pic.turned){
+					pic.turned = true;
+					pic.style.cssText = basicPos + " translate(320px) rotateY(-180deg)";
+					// btn.style.cssText = "transform: rotateY(-180deg)";
+					btn.classList.add('flipped');
+				}else {
+					pic.turned = false;
+					pic.style.cssText = basicPos + " rotateY(0deg)";
+					// btn.style.cssText = "transform: rotateY(0deg)";
+					btn.classList.remove('flipped');
+				}
+			}
+
+
+			
+			function btnActive (i){
+				if (aBtn.cpyAct) {
+					aBtn[aBtn.cpyAct].classList.remove('current');
+					aBtn[aBtn.cpyAct].classList.remove('flippable');
+					aBtn[aBtn.cpyAct].classList.remove('flipped');
+				}
+				aBtn[i].classList.add('current');
+				aBtn[i].classList.add('flippable');
+				aBtn.cpyAct = i;
+			}
+
+				 
+
+				function centerPhoto (i){
+					var oPic = aPhoto[i];
+					 if(aPhoto.cpyAct){
+					 	aPhoto[aPhoto.cpyAct].classList.remove('photo_current')
+					 }
+					oPic.classList.add('photo_current');
+					aPhoto.cpyAct = i;
+					var x = oPhotoStack.clientWidth / 2 - oPic.clientWidth/2;
+					var y = oPhotoStack.clientHeight / 2 - oPic.clientHeight/2
+					oPic.style.cssText = "transform: translate(" + x + 'px,' + y + 'px)';
+				}
+				
+
+
+				function  rangeRandom (min, max){
+					return parseInt((Math.random() * (max - min)) + min,10);
+				}
+
+
+				function randomSort (ary){
+					return ary.sort(function (a,b){
+						return Math.random() > .5 ? -1 : 1
+					})
+				}
+
+				
+				// 使用经典洗牌算法, 随机排列 
+				function shuffle(ary){	
+					var length = ary.length 
+					for(var l = length - 1; l >= 0; --l ){
+						var idx = Math.floor(Math.random()*(length - l)) ;
+						var para = length - idx -1;
+						ary[idx] = ary[idx] ^ ary[para];
+						ary[para] = ary[idx] ^ ary[para];
+						ary[idx] = ary[idx] ^ ary[para];
+					}
+					return ary;
+				}
+
+
+				function buildRndPos (){
+
+					var wPic = aPhoto[0].clientWidth;
+					var hPic = aPhoto[0].clientHeight
+					var wStack = oPhotoStack.clientWidth;
+					var hStack = oPhotoStack.clientHeight;
+						// 左边图片活动范围，
+					var rangeLeftX = {
+						min: 0,
+						max: wStack/2
+					}
+					// 右边图片活动范围，
+					var rangeRightX = {
+						min: wStack/2,
+						max: wStack
+					}
+					var rangeY = {
+							min: 0 - hPic,
+							max: hStack
+					}
+					var arPos = Array(aPhoto.length+1).join('0').split('').map(function (e,i,ary){
+						var pos = {};
+						if(i <= ary.length/2){
+							var lx = rangeRandom(rangeLeftX.min,rangeLeftX.max),
+								ly = rangeRandom(rangeY.min,rangeY.max);
+								// 如果用此y轴，图片下面或上面可能遮住居中图片，x轴要偏离中心
+								// 则x轴左边要少一个图片的1.5倍
+								if((ly+hPic > hStack/2 - hPic) && (ly < hStack/2 + hPic)){
+									lx -= hPic*2;
+								}
+								pos.x = lx;
+								pos.y = ly;
+						}else{
+							var rx = rangeRandom(rangeRightX.min,rangeRightX.max),
+								ry = rangeRandom(rangeY.min,rangeY.max);
+								// 如果用此y轴，图片下面或上面可能遮住居中图片，x轴要偏离中心
+								// 则x轴右边要多一个图片的0.5倍
+								if((ry+hPic > hStack/2 - hPic/2) && (ry < hStack/2 + hPic/2)){
+									rx += hPic*1;
+								}
+								pos.x = rx;
+								pos.y = ry;
+						}
+						return pos;
+
+					})
+					return arPos;
+				}
+
+				function shuffllePhoto (){
+					
+					// 打乱图片顺序
+					// var arDisorder = randomSort([...Array(aPhoto.length).keys()]);
+					var arDisorder = shuffle([...Array(aPhoto.length).keys()]);
+
+					// 产生随意坐标
+					var arRandPos = buildRndPos();
+
+					arDisorder.forEach( function(e,i,ary) {
+						aPhoto[e].style.cssText = `transform: translate(${arRandPos[i].x}px,${arRandPos[i].y}px) rotate(${rangeRandom(-90,90)}deg)`;
+					});
+
+					
+				}			
+
+
+				function insertContent (){
+					var strTempl =oPhotoStack.firstElementChild.innerHTML;
+					var strNav = '';
+					var html = [];
+					data.forEach(function (e,i){
+						var h = strTempl.replace('{{index}}', i).replace('{{img}}',e.img).replace('{{caption}}', e.title).replace('{{description}}', e.desc);
+						html.push(h);
+						strNav += '<span></span>';
+					});	
+					oPhotoStack.firstElementChild.innerHTML = html.join('');
+					oPhotoStack.firstElementChild.nextElementSibling.innerHTML = strNav;
+				}
+		}
+		window.addEventListener('DOMContentLoaded', mainHandle, false);
+	</script>
+</head>
+<body>
+	<section class="photoStack">
+		<div>
+			<figure class="photo" id="photo_{{index}}">
+				<a href="javascript:;"><img src="img/{{img}}" alt=""></a>
+				<figcaption>
+					<h2 class="photoStack-title">{{caption}}</h2>
+					<div class="photoStack-back">
+						<p>{{description}}</p>
+					</div>
+				</figcaption>
+			</figure>
+		</div>
+		<nav>
+			<span class="current"></span>
+			<span></span>
+		</nav>
+	</section>
+	<!-- <nav>
+				<button class="btn">flip</button>
+				<button class="btn2">flip2</button>
+				<button class="btn3">alter</button>
+	</nav> -->
+</body>
+</html>
